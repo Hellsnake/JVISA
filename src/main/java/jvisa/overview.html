@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<!--
+Copyright 2014 Günter Fuchs gfuchs@acousticmicroscopy.com.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<html>
+    <head>
+        <title>JVisa - Java VISA API</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <h1>Projects</h1>
+        <p>
+            There are two <a href="www.netbeans.org">NetBeans 8</a> projects, 
+            JVisa and JVisaOscilloscope, which compile into libraries in the 
+            "dist" folder, JVisa.jar and JVisaOscilloscope.jar respectively. Use
+            JVisaOscilloscope for VISA compliant oscilloscopes and JVisa for all
+            other VISA compliant instruments. You have to download a VISA DLL 
+            into a classpath folder since I cannot distribute it here for 
+            copyright reasons. I got mine from 
+            <a href="www.tektronix.com">Tektronix</a>.
+        </p>
+        <h1>Configurations for win32 and win64</h1>
+        <p>
+            To achieve loading either JnaVisa32.jar or JnaVisa64.jar, 
+            information of the 
+            <a href=https://netbeans.org/bugzilla/show_bug.cgi?id=148590">
+                thread
+            </a> was used.
+        </p>
+        <p>
+            Two property files were added to nbproject.configs: win32.properties
+            and win64.properties. They contain references to a win32 and win64 
+            library folder respectively and are used in 
+            project.properties.run.classpath. To build a particular 
+            configuration it has to be selected in the NetBeans IDE pull-down 
+            list, and the Java platform has to be switched accordingly pointing 
+            to either "Program Files (x86)/java/jdk&lt;version&gt;" (win32) or 
+            "Program Files/java/jdk&lt;version&gt;" (win64).
+        </p>
+        <h1>VisaLibrary.ViStatus</h1>
+        <p>
+            visa.h defines this type as a function pointer to an error handler. 
+            I could not get installing an error handler to work (visa.h function
+            viInstallHandler). Also, because JNA does not allow the pointer to a
+            Callback object to be retrieved, I had to obtain the pointer value 
+            by parsing the string returned by visaStatus.toString().
+        </p>
+        <h1>Unsigned Types</h1>
+        <p>
+            Java 8 can treat objects of type Integer and Long as unsigned. 
+            Should I make use of it in the get and set functions for attributes?
+        </p>
+        <h1>_WIN64 Compilation Switch</h1>
+        <p>
+            JNAerator -D switch does not work as expected (see 
+            jnaeratorCommandline.txt). Adding -D_VI_INT64_UINT64_DEFINED and 
+            -D_VISA_ENV_IS_64_BIT to the command line was sufficient.
+        </p>
+        <h1>Testing</h1>
+        <p>
+            I decided to use TestNG and not JUnit. There are two suites in Test 
+            Packages, JVisaSuite.xml and JVisaSuiteNoInstrument.xml. You can use
+            the latter to test communication (by means of function calls) with 
+            the VISA DLL. The former you can use to also test communication with
+            any VISA compliant instrument.
+        </p>
+        <p>
+            All classes derived from jvisa use one logger (java.util.logging) 
+            that gets instantiated in the super class (jvisa). By default its 
+            level is set to SEVERE. Since it is declared as public you can 
+            change its settings, you can for instance remove the file handler to
+            disable file logging.
+        </p>
+        <p>
+            Tests were run successfully on a Windows 7 64-bit machine. I did not
+            test with other operating systems.
+        </p>
+    </body>
+</html>
