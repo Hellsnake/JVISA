@@ -58,7 +58,7 @@ public class VisaMain {
 		while(jvisaStatus.visaStatusLong == VisatypeLibrary.VI_SUCCESS) {
 			jvisaStatus.setStatus(dev.visaLib.viFindNext(listPtr.getValue(), found));
 			if(jvisaStatus.visaStatusLong == VisatypeLibrary.VI_SUCCESS) {
-				devList.add(new String(found.array(), Charset.forName("UTF8")));
+				devList.add(new String(found.array(), Charset.forName("UTF8")).trim());
 			}
 			
 			found.position(0);
