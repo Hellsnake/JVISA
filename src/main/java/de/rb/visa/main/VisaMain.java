@@ -1,7 +1,12 @@
 package de.rb.visa.main;
 
 import java.util.List;
+import java.util.logging.Logger;
+
+import javax.crypto.ShortBufferException;
+
 import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 
@@ -16,68 +21,49 @@ import visatype.VisatypeLibrary;
 
 public class VisaMain {
 
-	public static void main(String[] args) throws Exception{	
-		JVisaInstrument dev = new JVisaInstrument();
-		JVisaInstrument dev2 = new JVisaInstrument();
-		long visaStatus;
-		JVisaStatus jvisaStatus = new JVisaStatus(255, "UTF-8");
-		JVisaReturnString response = new JVisaReturnString();
-		JVisaReturnNumber visaNumber = new JVisaReturnNumber(0);
-		NativeLongByReference listPtr = new NativeLongByReference();
-		NativeLongByReference count = new NativeLongByReference();
-		String search = "?*INSTR";
-		ByteBuffer expr = dev.stringToByteBuffer(search);
-		List<String> devList = new ArrayList<>();
-		ByteBuffer found = ByteBuffer.allocate(256);
-		found.position(0);
-		
-		dev.openDefaultResourceManager();
-//		
-//		dev.openInstrument("GPIB0::14::INSTR");
-//		
-//		visaStatus = dev.write("DC;>\n");
-//		if(visaStatus != VisatypeLibrary.VI_SUCCESS) {
-//			dev.closeInstrument();
-//			dev.closeResourceManager();
-//			return;
-//		}
-//		
-//		//dev.setAttribute(VisaLibrary.VI_ATTR_TMO_VALUE, 2500);
-//		//Thread.sleep(2500);
-//		
-//		dev.read(response);
-//		System.out.println(response.returnString);
-//		
-//		
-		// SessionID, Search Expr, List, 
-		NativeLong session = new NativeLong(dev.getResourceManagerHandle());
-		
-		jvisaStatus.setStatus(dev.visaLib.viFindRsrc(session, expr, listPtr, count, found));
-		//devList.add(new String(found.array(), Charset.forName("UTF8")));
-		found.position(0);
-		while(jvisaStatus.visaStatusLong == VisatypeLibrary.VI_SUCCESS) {
-			jvisaStatus.setStatus(dev.visaLib.viFindNext(listPtr.getValue(), found));
-			if(jvisaStatus.visaStatusLong == VisatypeLibrary.VI_SUCCESS) {
-				devList.add(new String(found.array(), Charset.forName("UTF8")).trim());
-			}
-			
-			found.position(0);
-		}
-		for(String s : devList) {
-			if(s.contains("GPIB")) {
-				dev.openInstrument(s);
-				dev.setAttribute( VisaLibrary.VI_ATTR_TERMCHAR, (int)'\n', dev.getInstrumentHandle());
-				dev.setAttribute(VisaLibrary.VI_ATTR_TERMCHAR_EN, VisatypeLibrary.VI_TRUE, dev.getInstrumentHandle());
-				
-				dev.readId(response);
-				System.out.println(s + "(" + dev.getId().replace('\n',' ') + ")");
-				dev.closeInstrument();
-			}
-
-		}
-		//dev.closeInstrument();
-		//dev.closeResourceManager();
+	private List<String> deviceList;
 	
+	private JVisa defaultRessourceManager;
+	
+	public static final String CLASS_NAME = VisaMain.class.getName(); 
+	
+	private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
+	
+	public VisaMain() {
+		super();
+		deviceList = new ArrayList<>();
+		defaultRessourceManager = new JVisa();
+		defaultRessourceManager.openDefaultResourceManager();
+	}
+	
+	public static void main(String[] args) throws Exception{	
+		
+		new VisaMain().listDevices();
+	
+	}
+	
+	public void listDevices() {
+		deviceList.clear();
+		ByteBuffer searchExpr = defaultRessourceManager.stringToByteBuffer("?*INSTR");
+		NativeLongByReference listPtr = new NativeLongByReference();
+		NativeLongByReference countPtr = new NativeLongByReference();
+		ShortBuffer interfaceType;
+		NativeLong session;
+		JVisaStatus visaStatus;
+		ByteBuffer foundResString = ByteBuffer.allocate(256);
+		interfaceType = ShortBuffer.allocate(16);
+		interfaceType.position(0);
+		foundResString.position(0);
+		visaStatus = new JVisaStatus(255, "UTF-8");
+		session = new NativeLong(defaultRessourceManager.getResourceManagerHandle());
+		
+		visaStatus.setStatus(JVisa.visaLib.viFindRsrc(session, searchExpr, listPtr, countPtr, foundResString));
+		if(countPtr.getValue().intValue() > 0) {
+			JVisa.visaLib.viParseRsrc(session, foundResString, interfaceType, null);
+			deviceList.add(new String(foundResString.array()).replace('\n', ' ').trim());
+			LOGGER.info(String.format("countPtr: %d, listPtr: %d, device: %s", 
+					countPtr.getValue().intValue(), listPtr.getValue().intValue(), deviceList.get(deviceList.size() - 1)));
+		}
 	}
 	
 
